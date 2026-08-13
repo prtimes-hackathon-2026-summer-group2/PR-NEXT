@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+.next/
+out/
+.env
+.env.local
+.env.production.local
+npm-debug.log*
+*.tsbuildinfo
