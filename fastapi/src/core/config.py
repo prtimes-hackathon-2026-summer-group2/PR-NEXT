@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = Field(..., description="[RAG]埋め込みモデル名")
     EMBEDDING_DIMENSION: int = Field(..., description="[RAG]埋め込みモデルの次元数")
     EMBEDDING_MAX_SEQUENCE_LENGTH: int = Field(..., description="[RAG]埋め込みモデルの最大トークン数")
+    EMBEDDING_MAX_CONCURRENCY: int = Field(
+        default=4,
+        description=(
+            "[RAG]埋め込み推論を同時実行する上限"
+            "(CPU推論では1回の推論が複数コアを使うため、無制限に並列化するとコアの奪い合いで全体が遅くなる)"
+        ),
+    )
     # list型で受けるとpydantic-settingsがJSONとして解釈してしまうため、文字列で受けてプロパティで分割する
     CORS_ALLOW_ORIGINS: str = Field(
         default="",

@@ -17,6 +17,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # from fastapi.routing import APIRoute
+# ルーター
+from src.api.pressrelease.router import router as pressrelease_router
+
 # 環境変数 / グローバルリソース等
 from src.core import global_resources
 from src.core.config import settings
@@ -123,6 +126,8 @@ if settings.CORS_ALLOW_ORIGIN_LIST:
 # ==========================================
 # ルーター登録
 # ==========================================
+
+app.include_router(pressrelease_router)
 
 
 # ==========================================
