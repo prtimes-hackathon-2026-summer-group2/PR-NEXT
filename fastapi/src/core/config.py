@@ -1,5 +1,6 @@
 """共通設定・環境変数の読み込み"""
 
+from openai import AsyncOpenAI
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -19,6 +20,14 @@ class Settings(BaseSettings):
     DB_NAME: str = Field(..., description="[データベース]DB名")
     DB_HOST: str = Field(..., description="[データベース]DBホスト名(RDSのエンドポイントなど)")
     DB_PORT: int = Field(default=5432, description="[データベース]接続ポート")
+
+    # --- LLMテキスト生成関係 ---
+    LLM_API_KEY: str = Field(..., description="[LLM]APIキー")
+    LLM_MODEL_NAME: str = Field(..., description="[LLM]使用するモデル名")
+    LLM_BASE_URL: str | None = Field(
+        default=None,
+        description="[LLM]APIのベースURL(省略時はOpenAI公式のエンドポイントを使用。Azure OpenAIやOllama等のOpenAI互換エンドポイントを使う場合に指定する)",
+    )
 
     # --- ベクトル検索関係 ---
     EMBEDDING_MODEL: str = Field(..., description="[RAG]埋め込みモデル名")
@@ -54,3 +63,6 @@ class Settings(BaseSettings):
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 settings = Settings()  # pyright: ignore[reportCallIssue]
+
+# --- LLMクライアントのインスタンス化 ---
+llm_client = AsyncOpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)

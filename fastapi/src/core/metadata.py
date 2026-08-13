@@ -21,6 +21,7 @@ class AppMetadata:
     # 名前はASCIIとし、日本語の説明は description 側へ寄せている。
     TAGS: ClassVar[list[dict[str, str]]] = [
         {"name": "press-release", "description": "プレスリリースを検索・取得します。"},
+        {"name": "llm", "description": "LLMによるテキスト生成を行います。"},
     ]
 
     DESCRIPTION: str = """
