@@ -11,7 +11,11 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "sentence-transformers>=5.7.0",
     "torch>=2.13.0",
+    "tqdm>=4.67.3",
 ]
+
+[dependency-groups]
+dev = ["pyright>=1.1.411"]
 
 [project.scripts]
 python = "python:main"
@@ -19,6 +23,10 @@ python = "python:main"
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.pyright]
+typeCheckingMode = "standard"  # basic/standard/strict から選択
+pythonVersion = "3.13"
 
 [tool.uv]
 package = false
