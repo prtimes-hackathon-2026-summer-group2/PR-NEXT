@@ -30,6 +30,9 @@ build-backend = "uv_build"
 [tool.pyright]
 typeCheckingMode = "standard"  # basic/standard/strict から選択
 pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+exclude = [".venv", "**/__pycache__"]
 
 [tool.uv]
 package = false
