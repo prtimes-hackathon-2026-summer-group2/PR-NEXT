@@ -44,12 +44,12 @@ class Settings(BaseSettings):
     HF_TOKEN: str | None = Field(None, description="[トークン]HuggingFaceのアクセストークン(埋め込みモデルダウンロード高速化用)")
 
     @property
-    def CORS_ALLOW_ORIGIN_LIST(self) -> list[str]:  # noqa: N802 | 命名規則のルール無視
+    def CORS_ALLOW_ORIGIN_LIST(self) -> list[str]:
         """カンマ区切りのCORS許可オリジンをリストに変換して返す(空文字の場合は空リスト)"""
         return [origin.strip() for origin in self.CORS_ALLOW_ORIGINS.split(",") if origin.strip()]
 
     @property
-    def DATABASE_URL(self) -> str:  # noqa: N802
+    def DATABASE_URL(self) -> str:
         """環境変数の設定値を直接使って接続URLを構築する"""
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 

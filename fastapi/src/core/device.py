@@ -27,7 +27,7 @@ def get_device() -> torch.device:
         cuda
 
     """
-    import torch  # noqa: PLC0415 実行時の読み込みを軽量化するための遅延インポート
+    import torch
 
     if torch.cuda.is_available():
         return torch.device("cuda")
