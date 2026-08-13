@@ -10,6 +10,7 @@ dependencies = [
     "psycopg-pool>=3.3.1",
     "psycopg[binary]>=3.3.4",
     "sentence-transformers>=5.7.0",
+    "torch>=2.13.0",
 ]
 
 [project.scripts]
@@ -21,3 +22,14 @@ build-backend = "uv_build"
 
 [tool.uv]
 package = false
+
+# GPUを搭載しないEC2上でCPU推論のみを行うため、torchはCPU専用ビルドに固定する。
+# 既定のPyPIインデックスから解決するとCUDA版(nvidia-*, tritonを含む)が入り、
+# 不要に数GBを消費した上でこのマシンでは使われない。
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
