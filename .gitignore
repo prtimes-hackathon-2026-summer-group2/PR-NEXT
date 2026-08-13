@@ -1,0 +1,33 @@
+# 環境変数 / 仮想環境
+.env
+.env.local
+.venv/
+
+# Python由来のキャッシュ等
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# サードパーティー由来のキャッシュ等
+.pytest_cache/
+.ruff_cache/
+.cache/
+
+# Repomix
+repomix-output.xml
+repomix.config.json
+
+# ログファイル
+logs/
+*.log
+*.out
+
+# エージェント
+.claude/
+
+# IDE / エディタ設定
+.vscode/
+
+# OS依存ファイル
+.DS_Store
