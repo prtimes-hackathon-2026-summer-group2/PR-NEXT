@@ -31,3 +31,60 @@ logs/
 
 # OS依存ファイル
 .DS_Store
+
+
+# ============================================================
+# Local research data / analysis outputs
+# Keep locally, never commit
+# ============================================================
+/data/
+/outputs/
+
+# ============================================================
+# Local AWS / SSM diagnostic artifacts
+# Keep locally, never commit
+# ============================================================
+/ssm-*.json
+
+# ============================================================
+# Secrets / environment
+# ============================================================
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.p12
+*.pfx
+credentials
+credentials.*
+.aws/
+
+# ============================================================
+# Python generated files
+# ============================================================
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# ============================================================
+# Temporary / local runtime files
+# ============================================================
+cache/
+.cache/
+tmp/
+temp/
+logs/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
