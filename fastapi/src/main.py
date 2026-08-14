@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 
 # from fastapi.routing import APIRoute
 # ルーター
+from src.api.llm.router import router as llm_router
 from src.api.pressrelease.router import router as pressrelease_router
 
 # 環境変数 / グローバルリソース等
@@ -128,6 +129,7 @@ if settings.CORS_ALLOW_ORIGIN_LIST:
 # ==========================================
 
 app.include_router(pressrelease_router)
+app.include_router(llm_router)
 
 
 # ==========================================
