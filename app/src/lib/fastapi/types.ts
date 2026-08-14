@@ -32,9 +32,29 @@ export type ValidationErrorResponse = {
   }[];
 };
 
+export type LlmCompletionMessage = {
+  role: "system" | "user";
+  content: string;
+};
+
+export type LlmCompletionResponse = {
+  content: string;
+  usage?: {
+    model?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+};
+
 export type MetricKey = "page_view" | "unique_user" | "like_count";
 
 export type SearchActionState =
   | { status: "idle" }
   | { status: "success"; response: PressReleaseSearchResponse }
   | { status: "error"; message: string; query: string };
+
+export type MetricExplanationActionState =
+  | { status: "idle" }
+  | { status: "success"; content: string; requestKey: string }
+  | { status: "error"; message: string; requestKey: string };

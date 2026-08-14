@@ -6,6 +6,7 @@ import type {
   PressReleaseSearchResponse,
 } from "@/lib/fastapi/types";
 import { MetricComparison } from "./MetricComparison";
+import { MetricExplanation } from "./MetricExplanation";
 import { MetricSelector } from "./MetricSelector";
 import { PressReleaseDetail } from "./PressReleaseDetail";
 import { SimilarPressReleaseList } from "./SimilarPressReleaseList";
@@ -68,6 +69,7 @@ export function SearchResults({ response }: SearchResultsProps) {
                 />
               </div>
               <MetricComparison releases={releases} metric={selectedMetric} />
+              <MetricExplanation releases={releases} metric={selectedMetric} />
             </section>
 
             {selectedRelease && (
