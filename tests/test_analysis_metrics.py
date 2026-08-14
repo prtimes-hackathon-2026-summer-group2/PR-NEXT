@@ -21,6 +21,20 @@ def inputs(release_rows, statistic_rows, companies=None, media=None):
 
 
 class AnalysisMetricTests(unittest.TestCase):
+    @staticmethod
+    def _company_release_frame() -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "company_id": [1, 1, 1, 2],
+                "company_name": ["A", "A", "A", "B"],
+                "release_id": [1, 2, 3, 4],
+                "created_at": pd.to_datetime(
+                    ["2026-07-01", "2026-07-11", "2026-07-20", "2026-08-01"]
+                ),
+                "days_from_prev_release": [float("nan"), 10.0, 9.0, float("nan")],
+            }
+        )
+
     def test_initial_metrics_accept_dataframe_and_embargo_future_values(self):
         raw = pd.DataFrame(
             {
@@ -85,6 +99,32 @@ class AnalysisMetricTests(unittest.TestCase):
         self.assertEqual(company["recent_90d_release_count"], 1)
         self.assertIn(company["continuity_data_quality"], {"OK", "NO_PRIOR_90D_BASELINE"})
         self.assertIn("current_days_since_last_release", company.index)
+
+    def test_company_analysis_uses_explicit_as_of(self):
+        release = self._company_release_frame()
+
+        fallback = build_company_analysis(release).set_index("company_id")
+        explicit = build_company_analysis(release, as_of="2026-08-14").set_index(
+            "company_id"
+        )
+
+        self.assertEqual(fallback.at[1, "as_of_date"], pd.Timestamp("2026-08-01"))
+        self.assertEqual(fallback.at[1, "current_inactive_days"], 12.0)
+        self.assertEqual(explicit.at[1, "as_of_date"], pd.Timestamp("2026-08-14"))
+        self.assertEqual(explicit.at[1, "current_inactive_days"], 25.0)
+        self.assertEqual(explicit.at[1, "current_days_since_last_release"], 25.0)
+        self.assertEqual(fallback.at[1, "recent_30d_release_count"], 2)
+        self.assertEqual(explicit.at[1, "recent_30d_release_count"], 1)
+        self.assertEqual(fallback.at[1, "continuity_state"], "SLOWING")
+        self.assertEqual(explicit.at[1, "continuity_state"], "AT_RISK")
+
+    def test_company_analysis_rejects_invalid_or_too_early_as_of(self):
+        release = self._company_release_frame()
+
+        with self.assertRaises(ValueError):
+            build_company_analysis(release, as_of="not-a-date")
+        with self.assertRaises(ValueError):
+            build_company_analysis(release, as_of="2026-07-31")
 
 
 if __name__ == "__main__":

@@ -26,6 +26,8 @@ def build_timeline(release: pd.DataFrame) -> pd.DataFrame:
     grouped = frame.groupby("company_id", sort=False)
     frame["release_count"] = grouped.cumcount() + 1
     frame["previous_at"] = grouped["created_at"].shift(1)
+    # Same-timestamp releases are deterministically ordered by release_id; the
+    # later row has a zero raw gap, while historical baselines embargo the batch.
     frame["previous_gap_days"] = (
         frame["created_at"] - frame["previous_at"]
     ).dt.total_seconds() / 86400.0

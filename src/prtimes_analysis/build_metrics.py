@@ -101,7 +101,8 @@ def _add_media_detail_metrics(data: pd.DataFrame, media: pd.DataFrame | None) ->
     """Classify media first-seen/repeat status using releases strictly before X.
 
     The source detail is optional, so absence yields explicit unavailable flags
-    rather than fabricated zero media counts.
+    rather than fabricated zero media counts. "New" means first seen within the
+    available input history, not necessarily the company's lifetime history.
     """
     result = data.copy()
     result["media_detail_available"] = False
@@ -138,8 +139,31 @@ def _add_media_detail_metrics(data: pd.DataFrame, media: pd.DataFrame | None) ->
     return result
 
 
-def build_company_analysis(release: pd.DataFrame) -> pd.DataFrame:
-    as_of_date = release["created_at"].max()
+def build_company_analysis(
+    release: pd.DataFrame, as_of: pd.Timestamp | str | None = None
+) -> pd.DataFrame:
+    """Build company-level continuity metrics at an explicit analysis time.
+
+    When ``as_of`` is omitted, the latest ``created_at`` in the input is used.
+    This fallback is the dataset boundary, not the real-world current time.
+    """
+    release = release.copy()
+    release["created_at"] = pd.to_datetime(release["created_at"], errors="raise")
+    dataset_max = release["created_at"].max()
+    if as_of is None:
+        as_of_date = dataset_max
+    else:
+        try:
+            as_of_date = pd.Timestamp(as_of)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"as_of is not a valid timestamp: {as_of!r}") from error
+        if pd.isna(as_of_date):
+            raise ValueError("as_of must not be NaT")
+        if pd.notna(dataset_max):
+            if (dataset_max.tz is None) != (as_of_date.tz is None):
+                raise ValueError("as_of timezone awareness must match created_at")
+            if as_of_date < dataset_max:
+                raise ValueError("as_of must not be earlier than the latest release")
     grouped = release.groupby("company_id", dropna=False, sort=False)
     output = grouped.agg(
         company_name=("company_name", "first"),

@@ -9,7 +9,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-from .statistics import safe_ratio, strict_historical_median
+from .statistics import safe_ratio, safe_signed_ratio, strict_historical_median
 
 
 MIN_PEER_N = 20
@@ -116,7 +116,9 @@ def add_company_comparisons(frame: pd.DataFrame, metrics: Iterable[str]) -> pd.D
         frame[f"historical_{metric}_percentile"] = _strict_historical_percentile(frame, "company_id", metric)
         frame[f"prev_{metric}"] = grouped[metric].shift(1)
         frame[f"{metric}_prev_ratio"] = safe_ratio(frame[metric], frame[f"prev_{metric}"])
-        frame[f"{metric}_prev_change_pct"] = safe_ratio(frame[metric] - frame[f"prev_{metric}"], frame[f"prev_{metric}"])
+        frame[f"{metric}_prev_change_pct"] = safe_signed_ratio(
+            frame[metric] - frame[f"prev_{metric}"], frame[f"prev_{metric}"]
+        )
         frame[f"{metric}_self_state"] = state_from_ratio(frame[f"{metric}_self_ratio"])
         for window in (3, 5):
             mean, median, count = _recent_prior_statistics(frame, metric, window)
@@ -134,6 +136,7 @@ def add_company_comparisons(frame: pd.DataFrame, metrics: Iterable[str]) -> pd.D
 
 
 def _peer_stats(frame: pd.DataFrame, metric: str, group_columns: list[str], label: str) -> tuple[pd.Series, pd.Series]:
+    """Compute rolling historical peers after removing each row's own company."""
     percentile = pd.Series(np.nan, index=frame.index, dtype="float64")
     peer_n = pd.Series(0, index=frame.index, dtype="int64")
     eligible = frame.dropna(subset=[*group_columns, "created_at"]) if group_columns else frame.dropna(subset=["created_at"])
@@ -145,23 +148,39 @@ def _peer_stats(frame: pd.DataFrame, metric: str, group_columns: list[str], labe
         if not len(coordinates):
             continue
         tree = Fenwick(len(coordinates))
-        history: deque[tuple[pd.Timestamp, float]] = deque()
+        history: deque[tuple[pd.Timestamp, object, float]] = deque()
+        company_history: dict[object, deque[float]] = {}
+        missing_company = object()
         for timestamp, same_time in group.groupby("created_at", sort=False):
             cutoff = timestamp - pd.Timedelta(days=PEER_WINDOW_DAYS)
             while history and history[0][0] < cutoff:
-                _, expired = history.popleft()
+                _, company_key, expired = history.popleft()
                 tree.add(int(np.searchsorted(coordinates, expired)), -1)
-            n = tree.total()
-            peer_n.loc[same_time.index] = n
-            if n >= MIN_PEER_N:
-                for index, value in same_time[metric].items():
-                    if pd.notna(value):
-                        lower = tree.prefix(int(np.searchsorted(coordinates, float(value))) - 1)
-                        percentile.loc[index] = lower / n
-            for value in same_time[metric].dropna().astype(float):
+                company_history[company_key].popleft()
+            for index, row in same_time[["company_id", metric]].iterrows():
+                company_key = (
+                    missing_company if pd.isna(row["company_id"]) else row["company_id"]
+                )
+                own_values = company_history.get(company_key, ())
+                n = tree.total() - len(own_values)
+                peer_n.loc[index] = n
+                value = row[metric]
+                if n >= MIN_PEER_N and pd.notna(value):
+                    number = float(value)
+                    lower = tree.prefix(
+                        int(np.searchsorted(coordinates, number)) - 1
+                    ) - sum(item < number for item in own_values)
+                    percentile.loc[index] = lower / n
+            for company_id, value in same_time[["company_id", metric]].itertuples(
+                index=False, name=None
+            ):
+                if pd.isna(value):
+                    continue
+                company_key = missing_company if pd.isna(company_id) else company_id
                 number = float(value)
                 tree.add(int(np.searchsorted(coordinates, number)), 1)
-                history.append((timestamp, number))
+                company_history.setdefault(company_key, deque()).append(number)
+                history.append((timestamp, company_key, number))
     return peer_n, percentile
 
 

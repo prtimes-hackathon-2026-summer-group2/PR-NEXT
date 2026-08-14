@@ -23,6 +23,22 @@ def safe_ratio(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
     return result.where(np.isfinite(result))
 
 
+def safe_signed_ratio(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
+    """Return a finite signed ratio with a strictly positive denominator."""
+    num = pd.to_numeric(numerator, errors="coerce").astype("float64")
+    den = pd.to_numeric(denominator, errors="coerce").astype("float64")
+    valid = (
+        num.notna()
+        & den.notna()
+        & np.isfinite(num)
+        & np.isfinite(den)
+        & den.gt(0)
+    )
+    result = pd.Series(np.nan, index=num.index, dtype="float64")
+    result.loc[valid] = num.loc[valid] / den.loc[valid]
+    return result.where(np.isfinite(result))
+
+
 def strict_historical_median(
     frame: pd.DataFrame,
     value_col: str,

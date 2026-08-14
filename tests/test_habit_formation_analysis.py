@@ -17,6 +17,25 @@ from prtimes_analysis.habit_formation_analysis import (
 
 
 class HabitFormationAnalysisTests(unittest.TestCase):
+    def test_same_timestamp_release_has_zero_raw_gap_and_embargoed_history(self) -> None:
+        timeline = build_timeline(
+            pd.DataFrame(
+                {
+                    "company_id": [1, 1],
+                    "release_id": [2, 1],
+                    "created_at": pd.to_datetime(
+                        ["2025-01-01 10:00:00", "2025-01-01 10:00:00"]
+                    ),
+                }
+            )
+        ).set_index("release_id")
+
+        self.assertTrue(pd.isna(timeline.at[1, "previous_gap_days"]))
+        self.assertEqual(timeline.at[2, "previous_gap_days"], 0.0)
+        self.assertTrue(
+            timeline["historical_median_gap_before"].isna().all()
+        )
+
     def test_rhythm_stability_compares_stable_and_nonstable_groups(self) -> None:
         as_of = pd.Timestamp("2026-12-31")
         frame = pd.DataFrame(
