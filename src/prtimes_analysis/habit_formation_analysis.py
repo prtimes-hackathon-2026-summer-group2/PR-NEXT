@@ -88,8 +88,22 @@ def rhythm_stability(frame: pd.DataFrame, as_of: pd.Timestamp) -> tuple[pd.DataF
             continued = group["next_at"].notna() & group["next_release_days"].le(days)
             row[f"retention_{days}d"] = float(continued.mean())
         rows.append(row)
-    result = pd.DataFrame(rows).sort_values("rhythm_group").reset_index(drop=True)
-    stable_rate = float(result.loc[result.rhythm_group.eq("stable"), "retention_90d"].iloc[0])
+    result_columns = [
+        "rhythm_group",
+        "company_n",
+        "retention_90d",
+        "retention_180d",
+        "retention_365d",
+    ]
+    result = (
+        pd.DataFrame(rows, columns=result_columns)
+        .sort_values("rhythm_group")
+        .reset_index(drop=True)
+    )
+    stable_rates = result.loc[
+        result["rhythm_group"].eq("stable"), "retention_90d"
+    ]
+    stable_rate = float(stable_rates.iloc[0]) if len(stable_rates) else np.nan
     nonstable = anchors[anchors.rhythm_group.ne("stable")]
     nonstable_rate = float(
         (nonstable["next_at"].notna() & nonstable["next_release_days"].le(90)).mean()
@@ -222,6 +236,12 @@ def incentive_metrics(
         "within_1_5x": pairs["next_release_days"].le(1.5 * pairs["historical_median_gap_before"]),
         "within_90d": pairs["next_release_days"].le(90),
     }
+    event_years = frame["next_at"].dropna().dt.year
+    years = (
+        range(int(event_years.min()), int(event_years.max()) + 1)
+        if len(event_years)
+        else ()
+    )
     rows = []
     yearly = []
     for rule, mask in rules.items():
@@ -234,21 +254,24 @@ def incentive_metrics(
             "rule": rule,
             "eligible_company_n": int(matched["company_id"].nunique()),
             "eligible_pair_n": int(len(matched)),
-            "eligible_pair_share": float(len(matched) / len(pairs)),
+            "eligible_pair_share": (
+                float(len(matched) / len(pairs)) if len(pairs) else np.nan
+            ),
             "baseline_90d_n": int(len(baseline)),
             "subsequent_90d_natural_rate": float(further.mean()),
         }
         for bucket in ("3-10", "11-20", "21+"):
             row[f"pair_n_{bucket}"] = int(matched["count_bucket"].eq(bucket).sum())
         rows.append(row)
-        for year in range(2019, 2026):
+        for year in years:
             # A reward event occurs when the qualifying next release is sent,
             # so calendar-year volume belongs to next_at rather than the anchor.
             sample = matched[matched["next_at"].dt.year.eq(year)]
             yearly.append(
                 {"rule": rule, "calendar_year": year, "eligible_event_n": int(len(sample))}
             )
-    return pd.DataFrame(rows), pd.DataFrame(yearly)
+    yearly_columns = ["rule", "calendar_year", "eligible_event_n"]
+    return pd.DataFrame(rows), pd.DataFrame(yearly, columns=yearly_columns)
 
 
 def product_scale(frame: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
